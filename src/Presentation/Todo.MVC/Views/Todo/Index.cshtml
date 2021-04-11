@@ -1,0 +1,26 @@
+﻿@model IEnumerable<TodoViewModel>
+
+<h4>Todo List</h4>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Id</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Content</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var todo in Model)
+                {
+                    <tr>
+                        <th scope="row">@todo.Id</th>
+                        <td>@todo.Name</td>
+                        <td>@todo.Content</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

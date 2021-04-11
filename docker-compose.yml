@@ -1,0 +1,100 @@
+version: '3.4'
+
+# You need to start it with the following CLI command:
+# docker-compose up --build -d
+
+services:
+    seq:
+        image: datalust/seq:latest
+        environment:
+          - ACCEPT_EULA=Y
+        ports:
+          - "5340:80"
+
+    sqldata:
+        image: 'mcr.microsoft.com/mssql/server:2017-latest'
+        environment:
+            - SA_PASSWORD=Pass@word
+            - ACCEPT_EULA=Y
+        ports:
+            - '5433:1433'
+        volumes:
+            - .docker/sqldata:/var/opt/mssql
+
+    identity-api:
+        image: 'identity.api:${PLATFORM:-linux}-${TAG:-latest}'
+        build:
+            context: .
+            dockerfile: src/Services/Identity.API/Dockerfile
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Development
+            - ASPNETCORE_URLS=http://0.0.0.0:80
+            - SpaClient=http://${EXTERNAL_DNS_NAME_OR_IP}:5103
+            - MvcClient=http://${EXTERNAL_DNS_NAME_OR_IP}:5104
+            - TodoApiClient=http://${EXTERNAL_DNS_NAME_OR_IP}:5102
+            - ConnectionString=${IDENTITY_DB:-Server=sqldata;Database=Identity.API.IdentityDb;User Id=sa;Password=Pass@word}
+            - UseCustomizationData=True
+            - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}
+            - PATH_BASE=/identity-api
+        ports:
+            - "5101:80"
+        depends_on:
+            - sqldata
+
+    todo-api:
+        image: 'todo.api:${PLATFORM:-linux}-${TAG:-latest}'
+        build:
+            context: .
+            dockerfile: src/Services/Todo.API/Dockerfile
+        environment:
+          - ASPNETCORE_ENVIRONMENT=Development
+          - ASPNETCORE_URLS=http://0.0.0.0:80
+          - identityUrl=http://identity-api
+          - IdentityUrlExternal=http://${EXTERNAL_DNS_NAME_OR_IP}:5101
+          - ConnectionString=${TODO_DB:-Server=sqldata;Database=Todo.API.TodoDb;User Id=sa;Password=Pass@word}
+          - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}
+          - PATH_BASE=/todo-api
+        ports:
+          - "5102:80"
+        depends_on:
+          - identity-api
+          - sqldata
+
+    webspa:
+        image: webspa:${PLATFORM:-linux}-${TAG:-latest}
+        build:
+          context: .
+          dockerfile: src/Presentation/Todo.VueJS/Dockerfile
+          args:
+            NODE_IMAGE: ${NODE_IMAGE:-node:10.13}
+        environment:
+          - ASPNETCORE_ENVIRONMENT=Development
+          - ASPNETCORE_URLS=http://0.0.0.0:80
+          - IdentityUrl=http://${EXTERNAL_DNS_NAME_OR_IP}:5101
+          - IdentityUrlHC=http://identity-api/hc
+          - UseCustomizationData=True
+          - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}
+        ports:
+          - "5103:80"
+        depends_on:
+          - identity-api
+          - todo-api
+
+    webmvc:
+        image: webmvc:${PLATFORM:-linux}-${TAG:-latest}
+        build:
+          context: .
+          dockerfile: src/Presentation/Todo.MVC/Dockerfile
+        environment:
+          - ASPNETCORE_ENVIRONMENT=Development
+          - ASPNETCORE_URLS=http://0.0.0.0:80
+          - IdentityUrl=http://${EXTERNAL_DNS_NAME_OR_IP}:5101
+          - IdentityUrlHC=http://identity-api/hc
+          - UseCustomizationData=True
+          - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}
+          - UseLoadTest=${USE_LOADTEST:-False}
+        ports:
+          - "5104:80"
+        depends_on:
+          - identity-api
+          - todo-api
