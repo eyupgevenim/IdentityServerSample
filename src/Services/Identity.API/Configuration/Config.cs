@@ -44,12 +44,28 @@ namespace Identity.API.Configuration
                 {
                     ClientId = "js",
                     ClientName = "Vue SPA OpenId Client",
-                    AllowedGrantTypes = GrantTypes.Implicit,
+                    AllowedGrantTypes = GrantTypes.Code,
+                    RequirePkce = true,
+                    AccessTokenType = AccessTokenType.Reference,
+                    RequireClientSecret = false,
+
                     AllowAccessTokensViaBrowser = true,
-                    RedirectUris =           { $"{clientsUrl["Spa"]}/" },
+                    RedirectUris =           
+                    {
+                        $"{clientsUrl["Spa"]}",
+                        $"{clientsUrl["Spa"]}/callback.html",
+                        $"{clientsUrl["Spa"]}/silent-renew.html",
+                    },
                     RequireConsent = false,
-                    PostLogoutRedirectUris = { $"{clientsUrl["Spa"]}/" },
-                    AllowedCorsOrigins =     { $"{clientsUrl["Spa"]}" },
+                    PostLogoutRedirectUris = 
+                    {
+                        $"{clientsUrl["Spa"]}",
+                        $"{clientsUrl["Spa"]}/"
+                    },
+                    AllowedCorsOrigins =     
+                    {
+                        $"{clientsUrl["Spa"]}" 
+                    },
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,

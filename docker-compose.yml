@@ -18,8 +18,8 @@ services:
             - ACCEPT_EULA=Y
         ports:
             - '5433:1433'
-        volumes:
-            - .docker/sqldata:/var/opt/mssql
+        #volumes:
+        #    - .docker/sqldata:/var/opt/mssql
 
     identity-api:
         image: 'identity.api:${PLATFORM:-linux}-${TAG:-latest}'
@@ -49,7 +49,7 @@ services:
         environment:
           - ASPNETCORE_ENVIRONMENT=Development
           - ASPNETCORE_URLS=http://0.0.0.0:80
-          - identityUrl=http://identity-api
+          - identityUrl=http://${EXTERNAL_DNS_NAME_OR_IP}:5101
           - IdentityUrlExternal=http://${EXTERNAL_DNS_NAME_OR_IP}:5101
           - ConnectionString=${TODO_DB:-Server=sqldata;Database=Todo.API.TodoDb;User Id=sa;Password=Pass@word}
           - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}
@@ -60,25 +60,25 @@ services:
           - identity-api
           - sqldata
 
-    webspa:
-        image: webspa:${PLATFORM:-linux}-${TAG:-latest}
-        build:
-          context: .
-          dockerfile: src/Presentation/Todo.VueJS/Dockerfile
-          args:
-            NODE_IMAGE: ${NODE_IMAGE:-node:10.13}
-        environment:
-          - ASPNETCORE_ENVIRONMENT=Development
-          - ASPNETCORE_URLS=http://0.0.0.0:80
-          - IdentityUrl=http://${EXTERNAL_DNS_NAME_OR_IP}:5101
-          - IdentityUrlHC=http://identity-api/hc
-          - UseCustomizationData=True
-          - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}
-        ports:
-          - "5103:80"
-        depends_on:
-          - identity-api
-          - todo-api
+    #webspa:
+    #    image: webspa:${PLATFORM:-linux}-${TAG:-latest}
+    #    build:
+    #      context: .
+    #      dockerfile: src/Presentation/Todo.VueJS/Dockerfile
+    #      args:
+    #        NODE_IMAGE: ${NODE_IMAGE:-node:10.13}
+    #    environment:
+    #      - ASPNETCORE_ENVIRONMENT=Development
+    #      - ASPNETCORE_URLS=http://0.0.0.0:80
+    #      - IdentityUrl=http://${EXTERNAL_DNS_NAME_OR_IP}:5101
+    #      - IdentityUrlHC=http://identity-api/hc
+    #      - UseCustomizationData=True
+    #      - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}
+    #    ports:
+    #      - "5103:80"
+    #    depends_on:
+    #      - identity-api
+    #      - todo-api
 
     webmvc:
         image: webmvc:${PLATFORM:-linux}-${TAG:-latest}
@@ -89,6 +89,8 @@ services:
           - ASPNETCORE_ENVIRONMENT=Development
           - ASPNETCORE_URLS=http://0.0.0.0:80
           - IdentityUrl=http://${EXTERNAL_DNS_NAME_OR_IP}:5101
+          - TodoUrl=http://${EXTERNAL_DNS_NAME_OR_IP}:5102
+          - CallBackUrl=http://${EXTERNAL_DNS_NAME_OR_IP}:5104
           - IdentityUrlHC=http://identity-api/hc
           - UseCustomizationData=True
           - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}

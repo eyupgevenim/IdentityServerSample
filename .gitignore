@@ -1,6 +1,9 @@
 .vs/
 .vscode/
+.docker/
 /**/bin
 /**/obj
 
 /**/*.csproj.user
+node_modules/
+dist/
